@@ -1,0 +1,49 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "962761051a08f817591ff0e66dd18fe8",
+    "entities": [
+      {
+        "tableName": "reports",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`areaId` TEXT NOT NULL, `seats` TEXT NOT NULL, `atmosphere` TEXT NOT NULL, `savedAt` INTEGER NOT NULL, PRIMARY KEY(`areaId`))",
+        "fields": [
+          {
+            "fieldPath": "areaId",
+            "columnName": "areaId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "seats",
+            "columnName": "seats",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "atmosphere",
+            "columnName": "atmosphere",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "savedAt",
+            "columnName": "savedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "areaId"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '962761051a08f817591ff0e66dd18fe8')"
+    ]
+  }
+}

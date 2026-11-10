@@ -1,0 +1,62 @@
+// Executed via use_figma. Editable native layers; no external images or credentials.
+const SIZE = { width: 402, height: 874, label: 'Phone', y: 100 };
+const page = await figma.getNodeByIdAsync('0:1');
+await figma.setCurrentPageAsync(page);
+await Promise.all(['Regular','Medium','Semi Bold','Bold'].map(style=>figma.loadFontAsync({family:'Inter',style})));
+const ids=[]; const controls=[]; const frames={};
+const C={bg:'#F5F5F7',white:'#FFFFFF',ink:'#1D1D1F',muted:'#6E6E73',red:'#CC0000',wash:'#FFF0F0',green:'#237449',line:'#E5E5EA'};
+const rgb=h=>({r:parseInt(h.slice(1,3),16)/255,g:parseInt(h.slice(3,5),16)/255,b:parseInt(h.slice(5,7),16)/255});
+const paint=h=>[{type:'SOLID',color:rgb(h)}];
+const track=n=>(ids.push(n.id),n);
+function box(parent,name,dir='VERTICAL',fill=null,pad=0,gap=12){const n=track(figma.createAutoLayout(dir));n.name=name;n.fills=fill?paint(fill):[];n.paddingLeft=n.paddingRight=n.paddingTop=n.paddingBottom=pad;n.itemSpacing=gap;parent.appendChild(n);return n;}
+function text(parent,s,size=16,style='Regular',color=C.ink,width){const n=track(figma.createText());n.name=s;n.fontName={family:'Inter',style};n.fontSize=size;n.lineHeight={unit:'PERCENT',value:130};n.characters=s;n.fills=paint(color);parent.appendChild(n);if(width){n.textAutoResize='HEIGHT';n.resize(width,n.height);}return n;}
+function fill(n,w){n.resize(w,n.height);n.layoutSizingHorizontal='FILL';return n;}
+function button(parent,label,to,primary=false){const n=box(parent,'Action / '+label,'HORIZONTAL',primary?C.red:C.white,14,8);n.cornerRadius=24;n.minHeight=48;n.primaryAxisAlignItems='CENTER';n.counterAxisAlignItems='CENTER';text(n,label,16,'Semi Bold',primary?C.white:C.ink);if(to)controls.push({n,to});return n;}
+function note(parent,s,w){return text(parent,s,13,'Regular',C.muted,w);}
+function tag(parent,s,good=true){const n=box(parent,s,'HORIZONTAL',good?'#EAF5EC':C.wash,8,0);n.cornerRadius=10;text(n,s,12,'Medium',good?C.green:C.red);return n;}
+const data=[['Mugar Memorial Library','4th floor · Silent zone','A few seats','Quiet','4 min walk','#E1E8DE'],['Mugar PAL Lounge','1st floor · Collaborative','Plenty of seats','Noisy','4 min walk','#EDE1D2'],['Stone Science Library','Reading room · Quiet zone','Unknown','Unknown','7 min walk','#DDE8ED'],['Pardee Management Library','Study area · Quiet zone','Plenty of seats','Moderate','9 min walk','#E9E2EF'],['Science & Engineering','Open study · Quiet zone','Full','Quiet','6 min walk','#E2E8D7']];
+function art(parent,w,h=110,color='#E1E8DE'){
+ const n=track(figma.createNodeFromSvg(`<svg width="${w}" height="${h}" viewBox="0 0 360 140" xmlns="http://www.w3.org/2000/svg"><rect width="360" height="140" fill="${color}"/><circle cx="302" cy="30" r="20" fill="#FFFFFF" opacity=".6"/><path d="M0 132L360 108V140H0" fill="#A5B49B"/><path d="M62 111V40L199 20L294 55V118L157 137Z" fill="#A6B8A3"/><path d="M62 40L199 20V111L62 131Z" fill="#F4F4EB"/><path d="M62 40L199 20L294 55L157 76Z" fill="#FFFFFF"/><path d="M157 76L294 55V118L157 137Z" fill="#859E87"/><path d="M77 49V115M99 45V112M121 42V109M143 38V106M165 35V65M187 31V62" stroke="#4B6456" stroke-width="12"/><path d="M177 88L277 72M177 110L277 94" stroke="#E3E9D9" stroke-width="12"/><ellipse cx="36" cy="93" rx="19" ry="30" fill="#728D76"/><path d="M36 110V137" stroke="#4B6456" stroke-width="4"/></svg>`));parent.appendChild(n);return n;
+}
+let slot=0;const W=SIZE.width,H=SIZE.height;const mobile=W<600;const pad=mobile?24:40;const inner=W-2*pad;
+function screen(key,title,subtitle){
+ const f=box(page,SIZE.label+' / '+key,'VERTICAL',C.bg,0,0);f.resize(W,H);f.primaryAxisSizingMode='FIXED';f.counterAxisSizingMode='FIXED';f.x=100+slot++*(W+100);f.y=SIZE.y;f.cornerRadius=mobile?36:24;f.clipsContent=true;frames[key]=f;
+ const top=fill(box(f,'App header','HORIZONTAL',C.white,20,12),W);top.counterAxisAlignItems='CENTER';top.primaryAxisAlignItems='SPACE_BETWEEN';text(top,'Seat-Scout',22,'Bold');text(top,'BU  ·  Sample demo',12,'Medium',C.red);
+ const content=fill(box(f,'Scrollable content','VERTICAL',null,pad,20),W);content.resize(W,H-150);content.layoutSizingVertical='FILL';content.primaryAxisSizingMode='FIXED';content.overflowDirection='VERTICAL';content.clipsContent=true;
+ text(content,title,mobile?34:44,'Bold',C.ink,inner);if(subtitle)note(content,subtitle,inner);
+ const nav=fill(box(f,'Navigation','HORIZONTAL',C.white,12,8),W);nav.primaryAxisAlignItems='SPACE_BETWEEN';for(const [label,to]of [['Discover','Discover'],['Map','Campus map'],['Saved','Saved']])button(nav,label,to);
+ return {f,body:content,w:inner};
+}
+function card(parent,index,w,to){const d=data[index];const n=box(parent,'Space / '+d[0],'VERTICAL',C.white,0,0);n.resize(w,n.height);n.cornerRadius=22;n.clipsContent=true;art(n,w);const b=fill(box(n,'Space information','VERTICAL',null,18,7),w);text(b,d[0],19,'Semi Bold',C.ink,w-36);note(b,d[1],w-36);const row=box(b,'Observed conditions','HORIZONTAL',null,0,8);tag(row,d[2],d[2]!=='Full');text(row,d[3],13,'Medium',C.muted);note(b,d[4]+'  ·  Sample observation',w-36);controls.push({n,to:to||'Details '+index});return n;}
+function catalog(body,list){const cols=mobile?1:W<1000?2:3;const cw=(inner-(cols-1)*16)/cols;for(let i=0;i<list.length;i+=cols){const row=fill(box(body,'Space row','HORIZONTAL',null,0,16),inner);for(const index of list.slice(i,i+cols))card(row,index,cw);}}
+let s=screen('Discover','Find your focus.','A little less searching. A little more studying.');
+let hero=fill(box(s.body,'Campus introduction','VERTICAL',C.ink,22,10),inner);hero.cornerRadius=24;text(hero,'Your campus. Your kind of space.',mobile?25:32,'Semi Bold',C.white,inner-44);text(hero,'Find a quiet corner or a place to think together.',16,'Regular','#D7D7DC',inner-44);button(hero,'Explore campus map','Campus map');
+fill(button(s.body,'Search study spaces','Search'),inner);let filters=box(s.body,'Quick filters','HORIZONTAL',null,0,8);button(filters,'Quiet','Quiet spaces');button(filters,'Power','Power spaces');
+text(s.body,'Around campus',22,'Bold');catalog(s.body,[0,1,2,3,4]);note(s.body,'Illustrative locations and conditions. Reports expire after 30 minutes.',inner);
+for(const [key,title,desc,list]of [['Quiet spaces','A little peace.','Quiet atmosphere · sample observations',[0,4]],['Power spaces','Stay plugged in.','Spaces with illustrative power amenities',[0,1,3,4]],['Search','Search campus','Choose a space to explore. This prototype uses preset search results.',[0,1,2,3,4]],['Saved','Your places.','Mugar is saved in this prototype. Tap it to plan your next session.',[0]]]){s=screen(key,title,desc);button(s.body,'Clear filters / Discover','Discover');catalog(s.body,list);}
+for(let i=0;i<data.length;i++){
+ const d=data[i];s=screen('Details '+i,d[0],d[1]);art(s.body,inner,160,d[5]);
+ let panel=fill(box(s.body,'Current conditions','VERTICAL',C.white,20,12),inner);panel.cornerRadius=22;text(panel,'Current conditions',21,'Semi Bold');let r=box(panel,'Conditions','HORIZONTAL',null,0,12);tag(r,d[2],d[2]!=='Full');text(r,d[3],17,'Semi Bold');note(panel,i===2?'No fresh observations. Be the first to help.':'Sample reports · updated a few minutes ago',inner-40);
+ note(s.body,'Official zone and observed noise are shown separately. Conditions describe a moment, not a guarantee.',inner);
+ text(s.body,'Make yourself comfortable',21,'Semi Bold');note(s.body,'Wi-Fi  ·  Study tables  ·  '+(i===2?'Natural light':'Power outlets')+'\nAmenities and walking times are illustrative.',inner);
+ fill(button(s.body,'Report conditions','Report '+i,true),inner);fill(button(s.body,'Save this space','Saved '+i),inner);fill(button(s.body,'Directions','Directions '+i),inner);button(s.body,'Back to Discover','Discover');
+ s=screen('Saved '+i,'Saved for later.','This space is saved in the prototype state.');card(s.body,i,inner);button(s.body,'Remove from saved','Saved empty');
+ s=screen('Directions '+i,'Plan your walk.','Directions preview · '+d[4]);text(s.body,d[0],24,'Semi Bold',C.ink,inner);note(s.body,'The map is illustrative. For the real address and route, check the library’s official listing before travelling.',inner);button(s.body,'Back to space','Details '+i);
+ if(i>0){s=screen('Report '+i,'Try a quick report.','The interactive reporting walkthrough uses Mugar Memorial Library.');note(s.body,'You can browse every sample space. This demo demonstrates reporting at Mugar so the submitted space and confirmation stay consistent.',inner);button(s.body,'Report at Mugar','Report 0',true);button(s.body,'Back to space','Details '+i);continue;}
+ s=screen('Report '+i,'What do you see?','1 of 2 · Seating at '+d[0]);note(s.body,'No need to count chairs. Choose your best observation.',inner);for(const seat of ['Plenty of seats','A few seats','Full'])fill(button(s.body,seat,'Noise '+i+' '+seat),inner);button(s.body,'Cancel','Details '+i);
+ for(const seat of ['Plenty of seats','A few seats','Full']){
+  s=screen('Noise '+i+' '+seat,'How does it sound?','2 of 2 · '+seat);note(s.body,'Report what you hear, regardless of the official zone.',inner);
+  for(const noise of ['Quiet','Moderate','Noisy'])fill(button(s.body,noise,'Review '+i+' '+seat+' '+noise),inner);button(s.body,'Back to seating','Report '+i);
+  for(const noise of ['Quiet','Moderate','Noisy']){
+   const suffix=i+' '+seat+' '+noise;s=screen('Review '+suffix,'Ready to share?','Your observation helps the next student.');text(s.body,d[0],23,'Semi Bold',C.ink,inner);let p=fill(box(s.body,'Observation summary','VERTICAL',C.white,20,16),inner);p.cornerRadius=24;text(p,'Seating  ·  '+seat,20,'Semi Bold');text(p,'Atmosphere  ·  '+noise,20,'Semi Bold');note(s.body,'This sample observation expires after 30 minutes. Conflicting reports show Mixed; no fresh reports show Unknown.',inner);fill(button(s.body,'Share observation','Thanks '+suffix,true),inner);button(s.body,'Edit seating','Report '+i);button(s.body,'Edit atmosphere','Noise '+i+' '+seat);
+   s=screen('Thanks '+suffix,'A little update.\nA big help.','Thanks for looking out for another Terrier.');let p2=fill(box(s.body,'Submitted observation','VERTICAL',C.white,24,16),inner);p2.cornerRadius=24;text(p2,'Observation shared',24,'Semi Bold',C.green);text(p2,d[0],21,'Semi Bold',C.ink,inner-48);tag(p2,seat);text(p2,noise,20,'Semi Bold');note(p2,'Just now · Prototype confirmation',inner-48);note(s.body,'This Figma flow simulates submission. No report is sent to a server.',inner);button(s.body,'Back to campus','Discover');
+  }
+ }
+}
+s=screen('Saved empty','Room for a favorite.','Save a study space to find it quickly next time.');button(s.body,'Find a space','Discover',true);
+s=screen('Campus map','A place nearby.','Charles River campus · illustrative map');
+const map=track(figma.createNodeFromSvg(`<svg width="${inner}" height="280" viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg"><rect width="700" height="400" rx="24" fill="#E8EDE3"/><path d="M-50 45Q300 160 750 40" stroke="#B9DCE9" stroke-width="90" fill="none"/><path d="M-20 350L730 170" stroke="white" stroke-width="36"/><path d="M150 450L80 160M430 440L365 175M640 450L570 150" stroke="white" stroke-width="20"/><path d="M160 200H270V260H160ZM320 160H370V220H320ZM470 260H550V320H470ZM170 320H270V380H170Z" fill="#C4D1BE"/><text x="380" y="65" font-size="18" fill="#467482">Charles River</text><text x="275" y="295" font-size="16" fill="#7C8677" transform="rotate(-14 275 295)">COMMONWEALTH AVENUE</text></svg>`));s.body.appendChild(map);for(let i=0;i<data.length;i++)fill(button(s.body,data[i][0]+'  ·  '+data[i][4],'Details '+i),inner);note(s.body,'Select a library to view its sample conditions. This is not a live Google Map.',inner);
+for(const {n,to}of controls){let source=n;while(source.parent&&source.parent.type!='PAGE')source=source.parent;const destination=frames[to];if(destination===source)continue;if(!destination)throw new Error('Missing destination: '+to);await n.setReactionsAsync([{trigger:{type:'ON_CLICK'},actions:[{type:'NODE',destinationId:destination.id,navigation:'NAVIGATE',transition:{type:'DISSOLVE',duration:0.2,easing:{type:'EASE_OUT'}},resetScrollPosition:true}]}]);}
+page.name='Seat-Scout · Apple prototype';page.flowStartingPoints=[...page.flowStartingPoints.filter(p=>p.name!==SIZE.label && p.nodeId!==frames.Discover.id),{nodeId:frames.Discover.id,name:SIZE.label}];
+figma.viewport.scrollAndZoomIntoView([frames.Discover]);
+return {createdNodeIds:ids,mutatedNodeIds:[page.id],screens:Object.fromEntries(Object.entries(frames).map(([k,v])=>[k,v.id])),links:controls.length,size:SIZE};
