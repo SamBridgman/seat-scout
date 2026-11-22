@@ -1,6 +1,7 @@
 package edu.bu.seatscout
 
 import android.app.Application
+import edu.bu.seatscout.data.SupabaseReportRepository
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
@@ -59,6 +60,7 @@ internal class RoomReportRepository(private val dao: ReportDao) : ReportReposito
     override val reports = dao.observeReports()
     override suspend fun save(area: StudyArea, seats: Seats, atmosphere: Atmosphere) {
         dao.save(Report(area.id, seats, atmosphere, System.currentTimeMillis()))
+        
     }
 }
 
@@ -67,6 +69,6 @@ open class SeatScoutApp : Application() {
 
     internal val repository: ReportRepository by lazy {
         val database = Room.databaseBuilder(this, SeatScoutDatabase::class.java, "seat-scout.db").build()
-        RoomReportRepository(database.reports())
+        SupabaseReportRepository(database.reports())
     }
 }

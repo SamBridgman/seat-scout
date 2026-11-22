@@ -49,7 +49,7 @@ internal fun Details(area: StudyArea, state: ScoutState, favorite: Boolean, save
             DetailPanel {
                 Heading("Observed conditions")
                 Conditions(state, area)
-                if (saved) Text("Report saved on this device.", color = MaterialTheme.colorScheme.primary,
+                if (saved) Text("Report submitted successfully.", color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                 Button(onReport, Modifier.fillMaxWidth().heightIn(min = 50.dp)) { Text("Update conditions") }
             }

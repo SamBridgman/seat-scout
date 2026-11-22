@@ -39,6 +39,7 @@ ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 dependencies {
     implementation(platform("io.github.jan-tennert.supabase:bom:3.2.3"))
     implementation("io.github.jan-tennert.supabase:postgrest-kt")
+    implementation("io.github.jan-tennert.supabase:auth-kt")
     implementation("io.ktor:ktor-client-android:3.2.3")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation("com.google.android.gms:play-services-maps:19.2.0")

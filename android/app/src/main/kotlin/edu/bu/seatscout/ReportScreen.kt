@@ -71,7 +71,7 @@ internal fun ReportScreen(area: StudyArea, model: ScoutViewModel, onBack: () -> 
                             CatalogFact("Seating", seats?.label.orEmpty())
                             CatalogFact("Atmosphere", atmosphere?.label.orEmpty())
                         }
-                        Muted("Your report stays on this device and is current for 30 minutes.")
+                        Muted("Your report is sent to Seat-Scout and is current for 30 minutes.")
                         if (error) Text("Couldn’t save your report. Try again.", color = MaterialTheme.colorScheme.error,
                             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                     }
