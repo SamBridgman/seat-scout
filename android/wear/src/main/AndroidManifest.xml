@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-feature android:name="android.hardware.type.watch" android:required="true" />
+    <application android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+        android:label="Seat-Scout" android:icon="@drawable/seat_scout_icon"
+        android:allowBackup="false" android:dataExtractionRules="@xml/local_data_rules" android:usesCleartextTraffic="false">
+        <meta-data android:name="com.google.android.wearable.standalone" android:value="true" />
+        <activity android:name=".WatchActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

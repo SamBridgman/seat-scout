@@ -12,4 +12,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "SeatScout"
-include(":app")
+include(":app", ":wear")

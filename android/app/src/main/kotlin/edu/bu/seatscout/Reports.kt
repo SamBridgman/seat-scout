@@ -21,14 +21,6 @@ internal enum class Atmosphere(val label: String, val description: String) {
     NOISY("Noisy", "Frequent conversation or disruptive sound")
 }
 
-internal data class StudyArea(val id: String, val name: String, val building: String, val zone: String, val power: String)
-
-internal val sampleAreas = listOf(
-    StudyArea("mugar4", "4th Floor Open Study", "Mugar Memorial Library", "Silent", "Available"),
-    StudyArea("pal", "PAL Study Lounge", "Mugar Memorial Library", "Collaborative", "Available"),
-    StudyArea("stone", "Open Seating", "Stone Science Library", "Silent", "Unverified")
-)
-
 @Entity(tableName = "reports")
 internal data class Report(
     @PrimaryKey val areaId: String,
@@ -58,17 +50,23 @@ internal abstract class SeatScoutDatabase : RoomDatabase() {
     abstract fun reports(): ReportDao
 }
 
-internal class ReportRepository(private val dao: ReportDao) {
-    val reports = dao.observeReports()
+internal interface ReportRepository {
+    val reports: Flow<List<Report>>
+    suspend fun save(area: StudyArea, seats: Seats, atmosphere: Atmosphere)
+}
 
-    suspend fun save(area: StudyArea, seats: Seats, atmosphere: Atmosphere) {
+internal class RoomReportRepository(private val dao: ReportDao) : ReportRepository {
+    override val reports = dao.observeReports()
+    override suspend fun save(area: StudyArea, seats: Seats, atmosphere: Atmosphere) {
         dao.save(Report(area.id, seats, atmosphere, System.currentTimeMillis()))
     }
 }
 
-class SeatScoutApp : Application() {
-    internal val repository by lazy {
+open class SeatScoutApp : Application() {
+    internal open suspend fun readSign(uri: android.net.Uri) = readCampusSign(contentResolver, uri)
+
+    internal val repository: ReportRepository by lazy {
         val database = Room.databaseBuilder(this, SeatScoutDatabase::class.java, "seat-scout.db").build()
-        ReportRepository(database.reports())
+        RoomReportRepository(database.reports())
     }
 }
