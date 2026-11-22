@@ -45,6 +45,7 @@ private val darkPalette = darkColorScheme(
 )
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -69,16 +70,19 @@ private fun ScoutNavigation(model: ScoutViewModel) {
     val state by model.state.collectAsStateWithLifecycle()
     val favorites by model.favorites.collectAsStateWithLifecycle()
     val savedArea by model.savedArea.collectAsStateWithLifecycle()
+    val areas by model.studyAreas.collectAsStateWithLifecycle()
+    val areasLoading by model.studyAreasLoading.collectAsStateWithLifecycle()
+
     NavHost(navController = nav, startDestination = "browse",
         enterTransition = { fadeIn(tween(180)) },
         exitTransition = { fadeOut(tween(180)) },
         popEnterTransition = { fadeIn(tween(180)) },
         popExitTransition = { fadeOut(tween(180)) }) {
         composable("browse") {
-            Browse(state, favorites, openArea = { nav.navigate("details/${it.id}") })
+            Browse(state, favorites, loading = areasLoading, areas,  openArea = { nav.navigate("details/${it.id}") })
         }
         composable("details/{areaId}") { entry ->
-            val area = sampleAreas.firstOrNull { it.id == entry.arguments?.getString("areaId") }
+            val area = areas.firstOrNull { it.id == entry.arguments?.getString("areaId") }
                 ?: return@composable
             Details(area, state, area.id in favorites, savedArea == area.id,
                 onBack = { nav.popBackStack() },
@@ -90,7 +94,7 @@ private fun ScoutNavigation(model: ScoutViewModel) {
                 })
         }
         composable("report/{areaId}") { entry ->
-            val area = sampleAreas.firstOrNull { it.id == entry.arguments?.getString("areaId") }
+            val area = areas.firstOrNull { it.id == entry.arguments?.getString("areaId") }
                 ?: return@composable
             ReportScreen(area, model) {
                 if (nav.currentBackStackEntry == entry) nav.popBackStack()

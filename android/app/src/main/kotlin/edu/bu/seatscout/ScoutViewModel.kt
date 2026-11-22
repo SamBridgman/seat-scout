@@ -3,6 +3,7 @@ package edu.bu.seatscout
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import edu.bu.seatscout.data.StudyAreaRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+
 internal data class ScoutState(
     val reports: Map<String, Report> = emptyMap(),
     val now: Long = System.currentTimeMillis(),
@@ -21,8 +23,41 @@ internal data class ScoutState(
     val readFailed: Boolean = false
 )
 
+
 class ScoutViewModel(app: Application) : AndroidViewModel(app) {
     private val repository = (app as SeatScoutApp).repository
+
+    private val studyAreaRepository by lazy { StudyAreaRepository() }
+    private val _studyAreas = MutableStateFlow<List<StudyArea>>(emptyList())
+    internal val studyAreas = _studyAreas.asStateFlow()
+    private val _studyAreasLoading = MutableStateFlow(false)
+    internal val studyAreasLoading = _studyAreasLoading.asStateFlow()
+    private val _studyAreasError = MutableStateFlow<String?>(null)
+    internal val studyAreasError = _studyAreasError.asStateFlow()
+
+    init {
+        loadStudyAreas()
+    }
+
+    internal fun loadStudyAreas() {
+        if (!_studyAreasLoading.compareAndSet(false, true)) return
+        _studyAreasError.value = null
+        viewModelScope.launch {
+            try {
+                _studyAreas.value = studyAreaRepository.getStudyAreas()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                android.util.Log.e("ScoutViewModel", "Failed to load study areas", error)
+                _studyAreasError.value = "Unable to load study areas. Please try again."
+            } finally {
+                _studyAreasLoading.value = false
+            }
+        }
+    }
+
+
+
     private val preferences = app.getSharedPreferences("seat-scout", Application.MODE_PRIVATE)
     private val savedIds = MutableStateFlow(preferences.getStringSet("saved-areas", emptySet()).orEmpty().toSet())
     internal val favorites = savedIds.asStateFlow()

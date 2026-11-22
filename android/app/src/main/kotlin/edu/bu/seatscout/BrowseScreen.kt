@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,11 +41,17 @@ import androidx.compose.ui.unit.dp
 
 private enum class Section(val label: String) { DISCOVER("Discover"), MAP("Map"), SAVED("Saved") }
 
-private val campuses = sampleAreas.map { it.campus }.filter { it.isNotBlank() }.distinct()
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun Browse(state: ScoutState, favorites: Set<String>, openArea: (StudyArea) -> Unit) {
+internal fun Browse(
+    state: ScoutState,
+    favorites: Set<String>,
+    loading: Boolean,
+    areas: List<StudyArea>,
+    openArea: (StudyArea) -> Unit
+) {
+    val campuses = areas.map { it.campus }.filter { it.isNotBlank() }.distinct()
+
     var tab by rememberSaveable { mutableStateOf(Section.DISCOVER) }
     var query by rememberSaveable { mutableStateOf("") }
     var quiet by rememberSaveable { mutableStateOf(false) }
@@ -56,9 +63,9 @@ internal fun Browse(state: ScoutState, favorites: Set<String>, openArea: (StudyA
     val search = query.trim()
     val filtered = search.isNotEmpty() || quiet || power
     val places = when (tab) {
-        Section.SAVED -> sampleAreas.filter { it.id in favorites }
-        Section.MAP -> sampleAreas.filter { selectedCampus == null || selectedCampus == it.campus }
-        Section.DISCOVER -> sampleAreas.filter { area ->
+        Section.SAVED -> areas.filter { it.id in favorites }
+        Section.MAP -> areas.filter { selectedCampus == null || selectedCampus == it.campus }
+        Section.DISCOVER -> areas.filter { area ->
             val report = state.reports[area.id]?.takeIf { it.freshAgeMinutes(state.now) != null }
             listOf(area.name, area.building, area.campus, area.address).any {
                 it.contains(search, ignoreCase = true)
@@ -110,7 +117,7 @@ internal fun Browse(state: ScoutState, favorites: Set<String>, openArea: (StudyA
                                 ScoutFilterChip("Power outlets", power) { power = !power }
                             }
                             if (!filtered && !keyboardOpen) {
-                                PhotoLocationFinder(sampleAreas) { match ->
+                                PhotoLocationFinder(areas) { match ->
                                     focusedAreaId = match.area.id
                                     selectedCampus = match.area.campus
                                     namedRoom = match.roomNamed
@@ -142,6 +149,22 @@ internal fun Browse(state: ScoutState, favorites: Set<String>, openArea: (StudyA
                         Surface(shape = CardShape, color = MaterialTheme.colorScheme.surface) {
                             Column(Modifier.fillMaxWidth().padding(20.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
+
+                                if (loading) {
+                                    Surface(Modifier.fillMaxSize()) {
+                                        Column(
+                                            modifier = Modifier.fillMaxSize(),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            CircularProgressIndicator()
+                                            Spacer(Modifier.height(16.dp))
+                                            Text("Loading study spaces…")
+                                        }
+                                    }
+
+                                }
+
                                 if (tab == Section.SAVED) {
                                     Heading("Keep a space handy")
                                     Muted("Save a space from its details to find it here.")
