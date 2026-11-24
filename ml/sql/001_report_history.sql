@@ -15,7 +15,7 @@ create table if not exists public.report_events (
   area_id     bigint not null references public.study_area (id),
   seats       text not null check (seats in ('MANY', 'FEW', 'FULL')),
   atmosphere  text not null check (atmosphere in ('QUIET', 'MODERATE', 'NOISY')),
-  reporter    uuid,                                   -- reports.user_id, kept private
+  reporter    uuid references auth.users (id) on delete cascade,
   reported_at timestamptz not null default now()      -- server time
 );
 
@@ -23,6 +23,9 @@ create index if not exists report_events_area_time_idx
   on public.report_events (area_id, reported_at desc);
 create index if not exists report_events_time_idx
   on public.report_events (reported_at desc);
+
+-- Index the reporter for account deletion cascades.
+create index if not exists report_events_reporter_idx on public.report_events (reporter);
 
 -- Raw history includes reporter IDs, so clients get no direct access.
 -- The trigger below and estimate_conditions() run as the table owner.

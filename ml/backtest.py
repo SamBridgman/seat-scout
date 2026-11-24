@@ -8,8 +8,10 @@ it, then compared with what the student reported. No future data is used.
 
 Export real reports from the Supabase SQL editor as CSV with:
 
-    select e.area_id, e.seats, e.atmosphere, e.reported_at
-    from report_events e order by e.reported_at;
+    select e.area_id, e.seats, e.atmosphere, e.reported_at,
+           case when e.reporter is not null then dense_rank() over (order by e.reporter) end as reporter
+    from report_events e
+    order by e.reported_at, e.id;
 """
 
 from __future__ import annotations

@@ -49,6 +49,24 @@ class ModelTest(unittest.TestCase):
         self.assertEqual(pick(est, 1, "atmosphere").label, "NOISY")
         self.assertEqual(pick(est, 9, "seats").basis, "insufficient")
 
+    def test_latest_live_report_per_student_and_room(self):
+        reports = [
+            Report(1, "FULL", "NOISY", WED_3PM - timedelta(minutes=4), "alice"),
+            Report(1, "FULL", "NOISY", WED_3PM - timedelta(minutes=3), "alice"),
+            Report(1, "MANY", "QUIET", WED_3PM - timedelta(minutes=2), "bob"),
+            Report(1, "MANY", "QUIET", WED_3PM - timedelta(minutes=1), "alice"),
+        ]
+        seats = pick(estimate(AREAS, reports, WED_3PM), 1, "seats")
+        self.assertEqual((seats.label, seats.live_reports), ("MANY", 2))
+
+    def test_history_limits_repeated_reports_from_one_student(self):
+        reports = [
+            Report(1, "FULL", "NOISY", WED_3PM - timedelta(days=d), "alice")
+            for d in (1, 2, 5, 6)
+        ]
+        seats = pick(estimate(AREAS, reports, WED_3PM), 1, "seats")
+        self.assertEqual((seats.basis, seats.history_reports), ("insufficient", 1))
+
     def test_live_weight_fades_after_about_30_minutes(self):
         r = [Report(1, "FULL", "NOISY", WED_3PM - timedelta(minutes=45))]
         self.assertNotEqual(pick(estimate(AREAS, r, WED_3PM), 1, "seats").basis, "live")

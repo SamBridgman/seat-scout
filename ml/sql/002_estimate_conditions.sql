@@ -10,6 +10,7 @@
 --      shrunk toward p_zone, each with a prior strength of 4 reports.
 --   3. Live: reports from the past 60 minutes are added with weight
 --      4 * 0.5^(age / 15 min) on top of the room pattern (prior strength 2).
+--   Use the latest live report and strongest matching past report per reporter and room.
 --   basis = 'live' when the live weight is at least 1 (a report within about
 --   30 minutes), 'pattern' when the room has a history weight of at least 3,
 --   and 'insufficient' otherwise. 'insufficient' estimates must not be shown
@@ -68,7 +69,10 @@ labels (dimension, label, ord) as (
 ),
 events as (
   select
+    e.id,
     e.area_id,
+    e.reporter,
+    e.reported_at,
     a.zone,
     v.dimension,
     v.label,
@@ -82,8 +86,8 @@ events as (
   cross join lateral (values ('seats', e.seats), ('atmosphere', e.atmosphere)) v (dimension, label)
   where e.reported_at <= at_time
 ),
-hist as (
-  select ev.area_id, ev.zone, ev.dimension, ev.label,
+hist_candidates as (
+  select ev.*,
          exp(-(d.hd * d.hd) / (2.0 * p.hour_sigma * p.hour_sigma))
            * power(0.5::float8, ev.age_s / 86400.0 / p.history_half_life_days) as w
   from events ev
@@ -94,12 +98,22 @@ hist as (
     and ev.weekend = t.weekend
     and d.hd <= p.hour_window
 ),
+hist as (
+  select distinct on (area_id, dimension, reporter, case when reporter is null then id end)
+    area_id, zone, dimension, label, w
+  from hist_candidates
+  order by area_id, dimension, reporter, case when reporter is null then id end,
+           w desc, reported_at desc, id desc
+),
 live as (
-  select ev.area_id, ev.dimension, ev.label,
-         p.live_weight * power(0.5::float8, ev.age_s / 60.0 / p.live_half_life_min) as w
+  select distinct on (ev.area_id, ev.dimension, ev.reporter, case when ev.reporter is null then ev.id end)
+    ev.area_id, ev.dimension, ev.label,
+    p.live_weight * power(0.5::float8, ev.age_s / 60.0 / p.live_half_life_min) as w
   from events ev
   cross join params p
   where ev.age_s < p.live_window_min * 60.0
+  order by ev.area_id, ev.dimension, ev.reporter, case when ev.reporter is null then ev.id end,
+           ev.reported_at desc, ev.id desc
 ),
 g_counts as (select h.dimension, h.label, sum(h.w) as c from hist h group by 1, 2),
 z_counts as (select h.zone, h.dimension, h.label, sum(h.w) as c from hist h group by 1, 2, 3),

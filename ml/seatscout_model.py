@@ -52,6 +52,7 @@ class Report:
     seats: str
     atmosphere: str
     reported_at: datetime  # timezone-aware
+    reporter: Optional[str] = None
 
     def label(self, dimension: str) -> str:
         return self.seats if dimension == "seats" else self.atmosphere
@@ -98,16 +99,16 @@ def estimate(
     l_w = defaultdict(float)
     l_n = defaultdict(int)
 
-    for r in reports:
+    history = {}
+    live = {}
+    for i, r in enumerate(reports):
         if r.area_id not in zone_of or r.reported_at > at:
             continue
+        key = (r.area_id, r.reporter if r.reporter is not None else i)
         age_s = (at - r.reported_at).total_seconds()
         if age_s < params.live_window_min * 60.0:
-            w = params.live_weight * 0.5 ** (age_s / 60.0 / params.live_half_life_min)
-            for dim in LABELS:
-                key = (r.area_id, dim, r.label(dim))
-                l_w[key] += w
-                l_n[key] += 1
+            if key not in live or r.reported_at >= live[key].reported_at:
+                live[key] = r
             continue
         weekend, hour = _local_features(r.reported_at, tz)
         if weekend != t_weekend:
@@ -118,6 +119,18 @@ def estimate(
         w = math.exp(-(hd * hd) / (2.0 * params.hour_sigma ** 2)) * 0.5 ** (
             age_s / 86400.0 / params.history_half_life_days
         )
+        if key not in history or (w, r.reported_at) >= (history[key][0], history[key][1].reported_at):
+            history[key] = (w, r)
+
+    for r in live.values():
+        age_s = (at - r.reported_at).total_seconds()
+        w = params.live_weight * 0.5 ** (age_s / 60.0 / params.live_half_life_min)
+        for dim in LABELS:
+            key = (r.area_id, dim, r.label(dim))
+            l_w[key] += w
+            l_n[key] += 1
+
+    for w, r in history.values():
         zone = zone_of[r.area_id]
         for dim in LABELS:
             lab = r.label(dim)
@@ -177,7 +190,7 @@ def load_areas(path: str) -> List[Area]:
 
 
 def load_reports(path: str) -> List[Report]:
-    """Read a CSV with area_id, seats, atmosphere, reported_at (ISO 8601 with offset)."""
+    """Read reports with ISO 8601 timestamps and optional reporter keys."""
     import csv
 
     out = []
@@ -186,7 +199,8 @@ def load_reports(path: str) -> List[Report]:
             ts = datetime.fromisoformat(r["reported_at"].replace("Z", "+00:00"))
             if ts.tzinfo is None:
                 raise ValueError(f"reported_at needs a UTC offset: {r['reported_at']}")
-            out.append(Report(int(r["area_id"]), r["seats"].upper(), r["atmosphere"].upper(), ts))
+            out.append(Report(int(r["area_id"]), r["seats"].upper(), r["atmosphere"].upper(),
+                              ts, r.get("reporter") or None))
     out.sort(key=lambda r: r.reported_at)
     return out
 

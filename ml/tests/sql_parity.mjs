@@ -16,7 +16,8 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const reportsSql = join(root, "..", "android", "supabase", "reports.sql");
 const reportsCsv = join(root, "data", "synthetic_reports.csv");
-if (!existsSync(reportsCsv)) execFileSync("python3", [join(root, "synthetic.py")], { stdio: "inherit" });
+const python = process.env.PYTHON ?? "python3";
+if (!existsSync(reportsCsv)) execFileSync(python, [join(root, "synthetic.py")], { stdio: "inherit" });
 
 let failures = 0;
 const check = (ok, message) => {
@@ -78,7 +79,7 @@ const times = [
   "2026-10-27T13:30:00Z", // Tuesday 09:30 Boston, during EDT
   "2026-10-09T02:00:00Z", // Thursday 22:00 Boston, near the start of the data
 ];
-const expected = JSON.parse(execFileSync("python3",
+const expected = JSON.parse(execFileSync(python,
   [join(root, "tests", "parity_expected.py"), reportsCsv, ...times], { encoding: "utf8" }));
 
 let compared = 0;
@@ -161,6 +162,34 @@ for (const role of ["anon", "authenticated"]) {
   check(blocked && rows.rows[0].n === areas.length * 2,
     `${role} cannot read raw history but can call estimate_conditions()`);
 }
+
+// Repeated changes by one student count once per layer.
+const other = "00000000-0000-4000-8000-000000000002";
+await db.exec(`
+  truncate report_events;
+  insert into auth.users values ('${other}');
+  insert into report_events (area_id, seats, atmosphere, reporter, reported_at)
+  select 2, 'FULL', 'NOISY', '${user}', '2026-11-16 20:00:00Z'::timestamptz + i * interval '1 second'
+  from generate_series(1, 4) as i;
+  insert into report_events (area_id, seats, atmosphere, reporter, reported_at) values
+    (2, 'FULL', 'NOISY', '${user}', '2026-11-18 19:56:00Z'),
+    (2, 'FULL', 'NOISY', '${user}', '2026-11-18 19:57:00Z'),
+    (2, 'MANY', 'QUIET', '${other}', '2026-11-18 19:58:00Z'),
+    (2, 'MANY', 'QUIET', '${user}', '2026-11-18 19:59:00Z');
+`);
+const roomSeats = async (at) => (await db.query(
+  "select basis, label, history_reports, live_reports from estimate_conditions($1) where area_id = '2' and dimension = 'seats'",
+  [at])).rows[0];
+const estimateNow = "2026-11-18T20:00:00Z";
+const liveEstimate = await roomSeats(estimateNow);
+check(liveEstimate.label === "MANY" && liveEstimate.live_reports === 2,
+  "live conditions use only the latest report per student and room");
+const patternEstimate = await roomSeats("2026-11-17T20:00:00Z");
+check(patternEstimate.basis === "insufficient" && patternEstimate.history_reports === 1,
+  "historical submissions from one student cannot create a room pattern");
+await db.query("delete from auth.users where id = $1", [user]);
+check(await count() === 1 && (await roomSeats(estimateNow)).live_reports === 1,
+  "deleting an account removes its event history and preserves other students' reports");
 
 await db.close();
 console.log(failures ? `\n${failures} check(s) failed` : "\nAll SQL checks passed");
