@@ -1,0 +1,37 @@
+area_id,name,building,zone
+1,4th Floor Open Study,Mugar Memorial Library,Silent
+2,PAL Study Lounge,Mugar Memorial Library,Collaborative
+3,Open Seating,Stone Science Library,Silent
+4,Open Study Spaces,Frederick S. Pardee Management Library,Considerate
+5,Science & Engineering Study,Science & Engineering Library,Mixed zones
+6,Basement Open Study,Mugar Memorial Library,Collaborative
+7,1st Floor Open Study,Mugar Memorial Library,Considerate
+8,Riverview Reading Room,Mugar Memorial Library,Silent
+9,5th Floor Open Study,Mugar Memorial Library,Silent
+10,6th Floor Open Study,Mugar Memorial Library,Silent
+11,1st Floor Open Study,Science & Engineering Library,Considerate
+12,Open Study Space,Pickering Educational Resources Library,Considerate
+13,Open Seating,Michael D. Papagiannis Astronomy Library,Silent
+14,Arthur Fiedler Reading Room,Mugar Memorial Library,Silent
+15,Music Listening Room,Mugar Memorial Library,Silent
+16,2nd Floor Mezzanine Open Study,Mugar Memorial Library,Considerate
+17,2nd Floor Open Study,Mugar Memorial Library,Silent
+18,3rd Floor Open Study,Mugar Memorial Library,Considerate
+19,MLK Jr. Reading Room,Mugar Memorial Library,Considerate
+20,Reservable Study Rooms,Mugar Memorial Library,Unverified
+21,Lower Level Quiet Study,Science & Engineering Library,Silent
+22,Group Study Alcove,Science & Engineering Library,Collaborative
+23,Group Work Room,Pickering Educational Resources Library,Collaborative
+24,Quiet Study Room,Pickering Educational Resources Library,Collaborative
+25,Team Rooms,Frederick S. Pardee Management Library,Collaborative
+26,1st Floor Lounge,College of Communication,Unverified
+27,Open Study Area,Educational Resource Center,Unverified
+28,Lower Floor Open Study,Duan Family Center for Computing & Data Sciences,Unverified
+29,Think Tank,College of Arts & Sciences,Unverified
+30,Dean’s Study Lounge,George Sherman Union,Unverified
+31,Gilbane Study Lounge,College of General Studies,Quiet
+32,L12 Quiet Study,Alumni Medical Library,Quiet
+33,L13 Silent Study,Alumni Medical Library,Silent
+34,Study Lounge,Riverway House,Unverified
+35,Study Lounge,Pilgrim House,Unverified
+36,Study Lounge,Longwood House,Unverified

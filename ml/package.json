@@ -1,0 +1,11 @@
+{
+  "name": "seat-scout-ml-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:sql": "node tests/sql_parity.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.3.0"
+  }
+}
